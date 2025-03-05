@@ -27,12 +27,12 @@ def get_path(path):
     return change_path
 
 # test path
-# train_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data/train")
-# dog_data_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data")
+train_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data/train")
+dog_data_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data")
 
 # register path
-train_path = get_path(os.getcwd()+"/Dog-Data/train")
-dog_data_path = get_path(os.getcwd()+"/Dog-Data")
+# train_path = get_path("nose/SVM-Classifier/Dog-Data/train")
+# dog_data_path = get_path("nose/SVM-Classifier/Dog-Data")
 
 
 #read data
@@ -90,7 +90,7 @@ def main():
     idx = 0
     for i, label in enumerate(file_list):
         if label == ".DS_Store":
-            continue;
+            continue
         label2id[label] = idx
         idx += 1
     X, Y = read_data(label2id)
@@ -135,7 +135,7 @@ def main():
     if opt.option == 'test':
         img_test = histo_clahe(dog_data_path + '/test/' + opt.test)
     elif opt.option == 'getpost':
-        path = os.getcwd()+'/testimage/'
+        path = os.getcwd()+'/nose/SVM-Classifier/testimage/'
         register_path = get_path(path)
         img_test = histo_clahe(register_path + opt.test + '/' + opt.test + '.jpg')
     img = [img_test]
