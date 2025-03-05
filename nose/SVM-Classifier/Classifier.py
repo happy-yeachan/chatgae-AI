@@ -30,9 +30,6 @@ def get_path(path):
 train_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data/train")
 dog_data_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data")
 
-# register path
-# train_path = get_path("nose/SVM-Classifier/Dog-Data/train")
-# dog_data_path = get_path("nose/SVM-Classifier/Dog-Data")
 
 
 #read data
@@ -157,9 +154,7 @@ def main():
     svm_prob = svm.predict_proba(img_bow_feature)[0][img_predict[0]]
     knn_prob = knn.predict_proba(img_bow_feature)[0][img_predict2[0]]
 
-    # print("SVM prob: ", svm.predict_proba(img_bow_feature))
-    # print("KNN prob: ", knn.predict_proba(img_bow_feature))
-    
+
     for key, value in label2id.items():
         if value == img_predict[0]:
             svm_k = key
@@ -167,12 +162,6 @@ def main():
             knn_k = key
 
     result =""
-    # if svm_k==knn_k:
-    #     result = result+svm_k+","
-    # else:
-    #     result =result+"a,"
-    # # result = result+"202151796꿍1234"+","
-    # # result =result+"등록된강아지"+","
 
     if (svm_prob < 0.50 and knn_prob < 0.50) or svm_k != knn_k or knn_k=='2020720301212' or knn_k=='2020820601313' or knn_k=='2020420304321':
         result =result+"a,"+"미등록강아지"+","
@@ -185,10 +174,7 @@ def main():
         result =result+str(svm_prob)
     else :
         result =result+str(knn_prob)
-    # print("SVM Score: ", svm.score(X_test, Y_test))
-    # print("KNN Score: ", knn.score(X_test, Y_test))
 
-    # print("running time: ", round(time.time() - start, 2))
     
     print(result)
     return result
