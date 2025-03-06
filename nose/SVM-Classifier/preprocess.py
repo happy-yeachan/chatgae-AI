@@ -1,68 +1,89 @@
 import os
-import argparse
 import cv2
 import numpy as np
 
-from PIL import Image
-from histo_clahe import histo_clahe
+def create_folder(directory):
+    """ 디렉토리가 없으면 생성하는 함수 """
+    if not os.path.exists(directory):
+        print("Creating directory:", directory)
+        os.makedirs(directory)
 
-parser = argparse.ArgumentParser(description='Argparse Tutorial')
-parser.add_argument('--dir', default='6',help='dataset directory')
-parser.add_argument('--savedir', default='./Dog-Data/train',help='save directory')
-opt = parser.parse_args()
+def histo_clahe(img_path):
+    """
+    이미지 경로를 입력받아 CLAHE를 적용한 이미지를 반환하는 함수
+    """
+    print(f"Processing: {img_path}")  # 디버깅용 출력
+    img_array = np.fromfile(img_path, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
+    if img is None:
+        raise ValueError(f"이미지를 불러올 수 없습니다. 경로를 확인하세요: {img_path}")
 
-#get_path
-def get_path(path):
-    change_path = path.replace("\\",'/')
-    return change_path
+    height, width, _ = img.shape
 
-# 학습 경로
-# os_path = get_path(os.getcwd() + '/AI/nose/SVM-Classifier')
-# os.chdir(os_path)
-# path =  './image/' + opt.dir
+    # 이미지 크기가 너무 크면 절반으로 줄이기
+    while height >= 600 or width >= 600:
+        img = cv2.resize(img, (width // 2, height // 2))
+        height, width, _ = img.shape
 
-#미등록강아지 경로
-path =  './rawimage/' + opt.dir
+    # YUV 컬러 스페이스 변환
+    img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
 
+    # 밝기 채널에 CLAHE 적용
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    img_yuv[:, :, 0] = clahe.apply(img_yuv[:, :, 0])  # CLAHE 적용
 
+    # 다시 BGR로 변환
+    img_clahe = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
 
-file_list = os.listdir(path)
+    return img_clahe
 
-rotate = [0, 15, 30, 45, -15, -30 , -45 ]
+# 이미지 폴더 경로
+image_dir = './image/'
+file_lists = os.listdir(image_dir)
 
-def createFolder(directory):
-    try:
-        if not os.path.exists(directory):
-            print("directory = " + directory)
-            os.makedirs(directory)
-    except OSError:
-        print ('Error: Creating directory. ' +  directory)
+# 회전 각도 설정
+rotate_angles = [0, 15, 30, 45, -15, -30, -45]
 
+# 이미지 처리 및 저장
+for folder in file_lists:
+    file_lists = os.listdir(image_dir + folder)
+    for file in file_lists:
+        file_path = os.path.join(image_dir, folder, file)
+        print(file_path)
+        # 파일이 아니면 건너뜀 (폴더 제외)
+        if not os.path.isfile(file_path):
+            continue
 
-for file in file_list:
-    s = os.path.splitext(file)
-    savedir = []
-    createFolder(opt.savedir + '/' + opt.dir)
-    #파일 저장 디렉토리 ./Dog-Data/train/imagename-i.jpg
-    for i in range(50):
-        savedir.append(opt.savedir + '/' + opt.dir + '/' + s[0] + '-' + str(i) + s[1])
+        file_name, file_ext = os.path.splitext(file)
+        
+        save_dir = os.path.join('Dog-Data', 'train', folder)
+        create_folder(save_dir)
 
-    #사이즈 1 rotate 저장
-    img = histo_clahe(path + '/' + file)
-    height, width, channel = img.shape
+        saved_files = []  # 저장한 파일 목록
 
-    for i in range(5):
-        matrix = cv2.getRotationMatrix2D((width/2, height/2), rotate[i], 1)
-        dst = cv2.warpAffine(img, matrix, (width, height))
-        cv2.imwrite(savedir[i],dst)
+        # CLAHE 적용
+        img = histo_clahe(file_path)
+        height, width, _ = img.shape
 
-    #사이즈 1/2 rotate 저장
-    img = cv2.resize(img,(int(width / 2), int(height / 2)))
-    height, width, channel = img.shape
+        # 원본 크기에서 회전하여 저장
+        for i, angle in enumerate(rotate_angles[:5]):  # 처음 5개 각도만 적용
+            matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+            dst = cv2.warpAffine(img, matrix, (width, height))
+            save_path = os.path.join(save_dir, f"{file_name}-{i}{file_ext}")
+            cv2.imwrite(save_path, dst)
+            saved_files.append(save_path)
 
-    for i in range(len(rotate)):
-        matrix = cv2.getRotationMatrix2D((width/2, height/2), rotate[i], 1)
-        dst = cv2.warpAffine(img, matrix, (width, height))
-        cv2.imwrite(savedir[i+5],dst)
-    
+        # 이미지 크기를 절반으로 줄이기
+        img_resized = cv2.resize(img, (width // 2, height // 2))
+        height, width, _ = img_resized.shape
+
+        # 줄인 크기에서 회전하여 저장
+        for i, angle in enumerate(rotate_angles):
+            matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+            dst = cv2.warpAffine(img_resized, matrix, (width, height))
+            save_path = os.path.join(save_dir, f"{file_name}-{i+5}{file_ext}")
+            cv2.imwrite(save_path, dst)
+            saved_files.append(save_path)
+
+        print(f"Saved {len(saved_files)} images to {save_dir}")
