@@ -82,5 +82,4 @@ def learning(folderName):
             save_path = os.path.join(save_dir, f"{file_name}-{i+5}{file_ext}")
             cv2.imwrite(save_path, dst)
             saved_files.append(save_path)
-
         print(f"Saved {len(saved_files)} images to {save_dir}")
