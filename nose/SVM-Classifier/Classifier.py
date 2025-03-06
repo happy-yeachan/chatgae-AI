@@ -27,12 +27,9 @@ def get_path(path):
     return change_path
 
 # test path
-# train_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data/train")
-# dog_data_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data")
+train_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data/train")
+dog_data_path = get_path(os.getcwd()+"/nose/SVM-Classifier/Dog-Data")
 
-# register path
-train_path = get_path(os.getcwd()+"/Dog-Data/train")
-dog_data_path = get_path(os.getcwd()+"/Dog-Data")
 
 
 #read data
@@ -90,7 +87,7 @@ def main():
     idx = 0
     for i, label in enumerate(file_list):
         if label == ".DS_Store":
-            continue;
+            continue
         label2id[label] = idx
         idx += 1
     X, Y = read_data(label2id)
@@ -105,7 +102,7 @@ def main():
                 all_descriptors.append(des)
 
 
-    num_clusters = 200
+    num_clusters = 500
 
     if not os.path.isfile(dog_data_path+'/bow.pkl'):
         BoW = kmeans_bow(all_descriptors, num_clusters)
@@ -122,12 +119,20 @@ def main():
     Y_test = []
     X_train, X_test, Y_train, Y_test = train_test_split(X_features, Y, test_size=0.2, random_state=42, shuffle=True)
 
-    #Train SVM
-    svm = sklearn.svm.SVC(C = 100, probability=True)
+    # #Train SVM
+    # svm = sklearn.svm.SVC(C = 100, probability=True)
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.svm import SVC
+
+    param_grid = {'C': [1, 10, 100, 1000], 'kernel': ['linear', 'rbf']}
+    grid_search = GridSearchCV(SVC(probability=True), param_grid, cv=5)
+    grid_search.fit(X_train, Y_train)
+
+    svm = grid_search.best_estimator_  # 최적의 SVM 모델 적용
     svm.fit(X_train, Y_train)
 
     #Train KNN
-    knn = KNeighborsClassifier(n_neighbors=10,  weights='distance', leaf_size=200, p=2)
+    knn = KNeighborsClassifier(n_neighbors=2,  weights='distance', leaf_size=200, p=2)
     knn.fit(X_train, Y_train)
 
     #predict
@@ -135,9 +140,9 @@ def main():
     if opt.option == 'test':
         img_test = histo_clahe(dog_data_path + '/test/' + opt.test)
     elif opt.option == 'getpost':
-        path = os.getcwd()+'/testimage/'
+        path = os.getcwd()+'/nose/SVM-Classifier/testimage/'
         register_path = get_path(path)
-        img_test = histo_clahe(register_path + opt.test + '/' + opt.test + '.jpg')
+        img_test = histo_clahe(register_path + '/' + opt.test + '/' + opt.test + '.jpg')
     img = [img_test]
     
     img_sift_feature = extract_sift_features(img)
@@ -157,9 +162,7 @@ def main():
     svm_prob = svm.predict_proba(img_bow_feature)[0][img_predict[0]]
     knn_prob = knn.predict_proba(img_bow_feature)[0][img_predict2[0]]
 
-    # print("SVM prob: ", svm.predict_proba(img_bow_feature))
-    # print("KNN prob: ", knn.predict_proba(img_bow_feature))
-    
+
     for key, value in label2id.items():
         if value == img_predict[0]:
             svm_k = key
@@ -167,28 +170,20 @@ def main():
             knn_k = key
 
     result =""
-    # if svm_k==knn_k:
-    #     result = result+svm_k+","
-    # else:
-    #     result =result+"a,"
-    # # result = result+"202151796꿍1234"+","
-    # # result =result+"등록된강아지"+","
 
-    if (svm_prob < 0.50 and knn_prob < 0.50) or svm_k != knn_k or knn_k=='2020720301212' or knn_k=='2020820601313' or knn_k=='2020420304321':
-        result =result+"a,"+"미등록강아지"+","
+    if svm_prob > 0.7 and knn_prob > 0.7 and svm_k == knn_k:
+        result = f"{svm_k}, 등록된강아지, {max(svm_prob, knn_prob)}"
+    elif svm_prob > 0.6 and knn_prob > 0.6 and svm_k == knn_k:
+        result = f"{svm_k}, 등록된강아지 (낮은 확률), {max(svm_prob, knn_prob)}"
     else:
-        if svm_prob < 0.70:
-            svm_prob = svm_prob+0.2
-        result =result+svm_k+","+"등록된강아지"+","
+        result = "-1, 미등록강아지, " + str(max(svm_prob, knn_prob))
+
     #Accuracy
     if svm_prob > knn_prob:
         result =result+str(svm_prob)
     else :
         result =result+str(knn_prob)
-    # print("SVM Score: ", svm.score(X_test, Y_test))
-    # print("KNN Score: ", knn.score(X_test, Y_test))
 
-    # print("running time: ", round(time.time() - start, 2))
     
     print(result)
     return result

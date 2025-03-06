@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 def histo_clahe(img_dir):
+    print(img_dir)
     img_array = np.fromfile(img_dir, np.uint8)
     img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
     height, width, channel = img.shape
