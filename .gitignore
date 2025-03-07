@@ -189,3 +189,7 @@ pip-selfcheck.json
 chatgae
 
 *.jpg
+
+venv
+
+.DS_Store

@@ -173,7 +173,7 @@ def main():
 
     if svm_prob > 0.7 and knn_prob > 0.7 and svm_k == knn_k:
         result = f"{svm_k}, 등록된강아지, {max(svm_prob, knn_prob)}"
-    elif svm_prob > 0.6 and knn_prob > 0.6 and svm_k == knn_k:
+    elif svm_prob > 0.5 and knn_prob > 0.5 and svm_k == knn_k:
         result = f"{svm_k}, 등록된강아지 (낮은 확률), {max(svm_prob, knn_prob)}"
     else:
         result = "-1, 미등록강아지, " + str(max(svm_prob, knn_prob))
